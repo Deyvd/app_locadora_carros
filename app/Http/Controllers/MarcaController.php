@@ -7,6 +7,7 @@ use App\Http\Requests\StoreMarcaRequest;
 use App\Http\Requests\UpdateMarcaRequest;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\TryCatch;
 
@@ -111,7 +112,18 @@ class MarcaController extends Controller
 
         }
 
-        $marca->update($request->all());
+        if ($request->file('imagem')){
+            Storage::disk('public')->delete($marca->imagem);
+        }
+
+        $imagem = $request->file('imagem');
+        $imagem_urn = $imagem->store('imagens/logomarca', 'public');
+        
+
+        $marca->update([
+            'nome'      => $request->nome,
+            'imagem'    => $imagem_urn
+        ]);
         
         return $marca;
     }
@@ -130,6 +142,8 @@ class MarcaController extends Controller
         if( $marca === null ) {
             return response()->json(['erro' => 'A marca selecionada não existe'], 404);
         }
+ 
+        Storage::disk('public')->delete($marca->imagem);
 
         $marca->delete();
         
