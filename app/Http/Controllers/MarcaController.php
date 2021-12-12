@@ -45,13 +45,15 @@ class MarcaController extends Controller
 
         $request->validate($this->marca->rules(), $this->marca->feedback());
 
-    
-        $imagem = $request->file('imagem');
-        $imagem->store('imagens', 'public');
-        dd($imagem);
-       
+        $nome = $request->nome;
 
-        $marca = $this->marca->create($request->all());
+        $imagem = $request->file('imagem');
+        $imagem_urn = $imagem->store('imagens/logomarca', 'public');
+        
+        $marca = $this->marca->create([
+            'nome'      => $nome,
+            'imagem'    => $imagem_urn
+        ]);
 
         return $marca;
     }
