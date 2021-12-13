@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Modelo;
 use App\Http\Requests\StoreModeloRequest;
 use App\Http\Requests\UpdateModeloRequest;
+use App\Repositories\ModeloRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ModeloController extends Controller
@@ -21,14 +23,33 @@ class ModeloController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        // $modelos = $this->modelo->all();
-        $modelos = $this->modelo->with('marca')->get();
 
-        // return $modelos;
+         
+        $modeloRepository = new ModeloRepository($this->modelo);
+       
+        if($request->has('atributos_marca')){
 
-        return response()->json($modelos, 200);
+            $atributos_marca = 'marca:id,'.$request->atributos_marca;       
+            $modeloRepository->selectAtributosRegistrosRelacionados($atributos_marca);
+
+        } else {
+            $modeloRepository->selectAtributosRegistrosRelacionados('marca');
+        }
+
+
+        if($request->has('filtro')){
+            $modeloRepository->filtro($request->filtro);            
+        }
+
+
+        if($request->has('atributos')) {
+            $modeloRepository->selectAtributos($request->atributos);
+        } 
+
+        return response()->json($modeloRepository->getResultado(), 200);
+        
 
     }
 
@@ -121,16 +142,19 @@ class ModeloController extends Controller
         $imagem = $request->file('imagem');
         $imagem_urn = $imagem->store('imagens/modelos', 'public');
         
+        $modelo->fill($request->all());
+        $modelo->imagem = $imagem_urn;
+        $modelo->save();
 
-        $modelo->update([
-            'marca_id'      =>$request->marca_id, 
-            'nome'          => $request->nome,
-            'imagem'        => $imagem_urn,
-            'numero_portas' =>$request->numero_portas,
-            'lugares'       =>$request->lugares,
-            'air_bag'       =>$request->air_bag,
-            'abs'           =>$request->abs
-        ]);
+        // $modelo->update([
+        //     'marca_id'      =>$request->marca_id, 
+        //     'nome'          => $request->nome,
+        //     'imagem'        => $imagem_urn,
+        //     'numero_portas' =>$request->numero_portas,
+        //     'lugares'       =>$request->lugares,
+        //     'air_bag'       =>$request->air_bag,
+        //     'abs'           =>$request->abs
+        // ]);
         
         return $modelo;
        
